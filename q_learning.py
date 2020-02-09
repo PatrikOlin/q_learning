@@ -4,13 +4,13 @@ import matplotlib.pyplot as plt
 
 env = gym.make("MountainCar-v0")
 state = env.reset()
-DISCRETE_OS_SIZE = [20,20]
+DISCRETE_OS_SIZE = [40,40]
 discrete_os_win_size = (env.observation_space.high - env.observation_space.low)/DISCRETE_OS_SIZE
 
 # Q-learning settings
 LEARNING_RATE = 0.3
 DISCOUNT = 0.95
-EPISODES = 10000
+EPISODES = 20000
 
 SHOW_EVERY = 1000
 STATS_EVERY = 100
@@ -20,9 +20,9 @@ ep_rewards = []
 aggr_ep_rewards = {'ep': [], 'avg': [], 'max': [], 'min': []}
 
 # Exploration settings
-epsilon = 0.50
+epsilon = 0.75
 START_EPSILON_DECAYING = 1
-END_EPSILON_DECAYING = EPISODES
+END_EPSILON_DECAYING = EPISODES//2
 
 epsilon_decay_value = epsilon/(END_EPSILON_DECAYING - START_EPSILON_DECAYING)
 
@@ -61,7 +61,7 @@ for episode in range(EPISODES):
             env.render()
             # print(episode_reward)
 
-        # If simulation did not end yet after last sted - update Q table
+        # If simulation did not end yet after last step - update Q table
         if not done:
 
             # Maximum possible Q values in next step
@@ -76,13 +76,13 @@ for episode in range(EPISODES):
             # Update Q table with new Q table
             q_table[discrete_state + (action,)] = new_q
 
-            # Simulationen ended (for any reason) - if goal position is achieved - update Q value with reward directly
+        # Simulationen ended (for any reason) - if goal position is achieved - update Q value with reward directly
         elif new_state[0] >= env.goal_position:
             #q_table[discrete_state + (action,)] = reward
             print(f'Made it on episode {episode}')
             q_table[discrete_state + (action,)] = 0
 
-            discrete_state = new_discrete_state
+        discrete_state = new_discrete_state
 
     #Decaying is being done every episode if episode number is within decaying range
     if END_EPSILON_DECAYING >= episode >= START_EPSILON_DECAYING:
@@ -96,6 +96,8 @@ for episode in range(EPISODES):
         aggr_ep_rewards['max'].append(max(ep_rewards[-STATS_EVERY:]))
         aggr_ep_rewards['min'].append(min(ep_rewards[-STATS_EVERY:]))
         print(f'Episode: {episode:>5d}, average: {average_reward:>4.1f}, min: {min(ep_rewards[-STATS_EVERY:])}, max: {max(ep_rewards[-STATS_EVERY:])}, current epsilon: {epsilon:>1.2f}')
+
+    np.save(f'qtables/{episode}-qtable.npy', q_table)
 
 env.close()
 
